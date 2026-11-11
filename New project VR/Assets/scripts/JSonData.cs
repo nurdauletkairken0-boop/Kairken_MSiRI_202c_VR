@@ -10,6 +10,10 @@ public class JSonData : MonoBehaviour
     public string url = "https://cnc.kovalev.team/get/3";
     public int channel = 1;
     public float interval = 1f;
+
+    [Header("UI Reference")]
+    public MachinePanel panel;
+
     public Transform nodeX;
     public Transform nodeY;
     public Transform nodeZ;
@@ -30,12 +34,11 @@ public class JSonData : MonoBehaviour
         startY = nodeY.localPosition;
         startZ = nodeZ.localPosition;
 
-        // Цикл опроса сервера перенесен внутрь Start() (корутины)
         while (true)
         {
             using (UnityWebRequest request = UnityWebRequest.Get(url))
             {
-                request.timeout = 10;
+                request.timeout = 1;
                 yield return request.SendWebRequest();
 
                 if (request.result == UnityWebRequest.Result.Success)
@@ -43,19 +46,46 @@ public class JSonData : MonoBehaviour
                     try
                     {
                         MoveNodes(request.downloadHandler.text);
+                        if (panel != null) panel.ShowMessage("");
                     }
                     catch (Exception error)
                     {
                         Debug.LogWarning("Ошибка чтения JSON: " + error.Message);
+                        if (panel != null) panel.ShowMessage("Ошибка формата данных");
                     }
                 }
                 else
                 {
                     Debug.LogWarning("Ошибка запроса: " + request.error);
+                    if (panel != null) panel.ShowMessage("Нет связи со станком");
                 }
             }
 
             yield return new WaitForSecondsRealtime(Mathf.Max(0.1f, interval));
+        }
+    }
+
+    private void MoveNodes(string json)
+    {
+        JObject data = JObject.Parse(json);
+        float x = GetCoordinate(data, "X");
+        float y = GetCoordinate(data, "Y");
+        float z = GetCoordinate(data, "Z");
+
+        nodeX.localPosition = startX + Vector3.right * (x * 0.001f);
+        nodeY.localPosition = startY + Vector3.forward * (y * 0.001f);
+        nodeZ.localPosition = startZ + Vector3.up * (z * 0.001f);
+
+        if (panel != null)
+        {
+            MachineState stateData = new MachineState
+            {
+                running = true,
+                x = x,
+                y = y,
+                z = z
+            };
+            panel.ShowState(stateData);
         }
     }
 
@@ -82,17 +112,5 @@ public class JSonData : MonoBehaviour
             }
         }
         throw new FormatException("Не найдена координата " + axis);
-    }
-
-    private void MoveNodes(string json)
-    {
-        JObject data = JObject.Parse(json);
-        float x = GetCoordinate(data, "X") * 0.001f;
-        float y = GetCoordinate(data, "Y") * 0.001f;
-        float z = GetCoordinate(data, "Z") * 0.001f;
-
-        nodeX.localPosition = startX + Vector3.right * x;
-        nodeY.localPosition = startY + Vector3.forward * y;
-        nodeZ.localPosition = startZ + Vector3.up * z;
     }
 }
