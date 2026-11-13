@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 5582969046878768203}
   - component: {fileID: 4039478547080067823}
   - component: {fileID: 4386737122367112808}
+  - component: {fileID: -4079188488024581668}
   m_Layer: 0
   m_Name: zag
   m_TagString: Workpiece
@@ -244,3 +245,15 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   interactable: {fileID: 0}
+--- !u!114 &-4079188488024581668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7511122929013176683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2626a127a9b00d14398c074ee83bb699, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

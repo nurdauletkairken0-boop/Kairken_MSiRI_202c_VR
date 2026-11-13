@@ -2,24 +2,39 @@ using UnityEngine;
 
 public class WorkpieceClamper : MonoBehaviour
 {
+    private bool isClamped = false;
+
     private void OnTriggerEnter(Collider other)
     {
-        // Проверяем, что в зону попал объект с Rigidbody (наша заготовка)
+        // Проверяем, что в зону попала заготовка с Rigidbody и она еще не привязана
         Rigidbody rb = other.GetComponent<Rigidbody>();
-        if (rb != null && other.transform.parent != transform)
+        if (rb != null && !isClamped)
         {
-            // 1. Отключаем физику и гравитацию
+            isClamped = true;
+
+            // 1. Отключаем физику, чтобы заготовка не сопротивлялась
             rb.isKinematic = true;
             rb.useGravity = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
 
-            // 2. Делаем дочерним объектом стола
-            other.transform.SetParent(transform);
+            // 2. Отключаем коллайдер, чтобы не было физических конфликтов со столом
+            Collider col = other.GetComponent<Collider>();
+            if (col != null)
+            {
+                col.enabled = false;
+            }
 
-            // 3. Выравниваем позицию аккуратно на столе (опционально)
-            // other.transform.localPosition = new Vector3(0, 0.1f, 0); 
-            // other.transform.localRotation = Quaternion.identity;
+            // 3. ПРИВЯЗКА К СТОЛУ:
+            // Второй аргумент (true) заставляет Unity сохранить исходный мировой масштаб заготовки, 
+            // поэтому её размер гарантированно не изменится!
+            other.transform.SetParent(transform, true);
 
-            Debug.Log("Заготовка успешно зафиксирована на столе: " + other.name);
+            // 4. Аккуратно ставим ровно в центр зоны фиксации и сбрасываем вращение
+            other.transform.localPosition = Vector3.zero;
+            other.transform.localRotation = Quaternion.identity;
+
+            Debug.Log("Заготовка успешно привязана к столу!");
         }
     }
 }

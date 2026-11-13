@@ -2,16 +2,29 @@ using UnityEngine;
 
 public class WorkpieceSpawner : MonoBehaviour
 {
-    public GameObject workpiecePrefab; // Ссылка на префаб заготовки
-    public Transform spawnPoint;       // Точка, где появится заготовка
+    public GameObject workpiecePrefab; // Ссылка на ваш новый чистый префаб "zag"
+    public Transform spawnPoint;       // Точка спавна в воздухе над столом
 
-    // Этот метод мы привяжем к виртуальной кнопке UI
     public void SpawnWorkpiece()
     {
         if (workpiecePrefab != null && spawnPoint != null)
         {
-            // Создаем копию префаба в позиции и с поворотом точки спавна
-            Instantiate(workpiecePrefab, spawnPoint.position, spawnPoint.rotation);
+            // 1. Создаем заготовку в точке спавна
+            GameObject newObj = Instantiate(workpiecePrefab, spawnPoint.position, spawnPoint.rotation);
+            
+            // 2. Убираем любые возможные родительские связи
+            newObj.transform.SetParent(null);
+
+            // 3. Принудительно активируем физику и гравитацию
+            Rigidbody rb = newObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.WakeUp();
+            }
         }
         else
         {
