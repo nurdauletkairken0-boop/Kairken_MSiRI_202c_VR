@@ -2,39 +2,60 @@ using UnityEngine;
 
 public class WorkpieceClamper : MonoBehaviour
 {
-    private bool isClamped = false;
+    private Transform clampedObject = null;
+    private Rigidbody clampedRb = null;
+    private Collider clampedCol = null;
+
+    [Header("Точка на столе, куда ложится деталь")]
+    public Transform attachPoint; 
 
     private void OnTriggerEnter(Collider other)
     {
-        // Проверяем, что в зону попала заготовка с Rigidbody и она еще не привязана
         Rigidbody rb = other.GetComponent<Rigidbody>();
-        if (rb != null && !isClamped)
+        
+        // Проверяем, что в зону попала заготовка (и она не является уже зафиксированной)
+        if (rb != null && other.transform != clampedObject)
         {
-            isClamped = true;
-
-            // 1. Отключаем физику, чтобы заготовка не сопротивлялась
-            rb.isKinematic = true;
-            rb.useGravity = false;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-
-            // 2. Отключаем коллайдер, чтобы не было физических конфликтов со столом
-            Collider col = other.GetComponent<Collider>();
-            if (col != null)
+            // ЕСЛИ НА СТОЛЕ УЖЕ ЕСТЬ ДЕТАЛЬ — УДАЛЯЕМ ЕЁ
+            if (clampedObject != null)
             {
-                col.enabled = false;
+                Debug.Log("Убираем старую заготовку: " + clampedObject.name);
+                Destroy(clampedObject.gameObject);
             }
 
-            // 3. ПРИВЯЗКА К СТОЛУ:
-            // Второй аргумент (true) заставляет Unity сохранить исходный мировой масштаб заготовки, 
-            // поэтому её размер гарантированно не изменится!
-            other.transform.SetParent(transform, true);
+            // Запоминаем новую заготовку
+            clampedObject = other.transform;
+            clampedRb = rb;
+            clampedCol = other.GetComponent<Collider>();
 
-            // 4. Аккуратно ставим ровно в центр зоны фиксации и сбрасываем вращение
-            other.transform.localPosition = Vector3.zero;
-            other.transform.localRotation = Quaternion.identity;
+            // 1. Отключаем физику новой детали
+            clampedRb.isKinematic = true;
+            clampedRb.useGravity = false;
+            clampedRb.linearVelocity = Vector3.zero;
+            clampedRb.angularVelocity = Vector3.zero;
 
-            Debug.Log("Заготовка успешно привязана к столу!");
+            // 2. Отключаем коллайдер
+            if (clampedCol != null) clampedCol.enabled = false;
+
+            // 3. Ставим на место привязки
+            UpdatePosition();
+
+            Debug.Log("Новая заготовка установлена на стол!");
         }
+    }
+
+    private void LateUpdate()
+    {
+        // Двигаем текущую заготовку вместе со столом
+        if (clampedObject != null && attachPoint != null)
+        {
+            UpdatePosition();
+        }
+    }
+
+    private void UpdatePosition()
+    {
+        clampedObject.position = attachPoint.position;
+        clampedObject.rotation = attachPoint.rotation;
     }
 }
